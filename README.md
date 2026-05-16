@@ -23,7 +23,9 @@ cafe-aroma/
 Mapa de Mesas com 20 mesas e 3 status visuais:
 
 🟤 Ocupada — mesa com pedido em andamento
+
 🟦 Livre — mesa disponível
+
 🟠 Parcial — mesa com consumo iniciado
 
 
