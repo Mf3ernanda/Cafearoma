@@ -1,4 +1,4 @@
-# ☕ Café Aroma -EM PROCESSO
+# ☕ Café Aroma - EM PROCESSO...
 
 — Sistema de Gestão de Mesas
 
