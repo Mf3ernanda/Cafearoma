@@ -18,7 +18,7 @@ cafe-aroma/
 ├── logo.jpeg    → Logo do Café Aroma
 └── README.md    → Este arquivo
 
-✨ Funcionalidades
+# ✨ Funcionalidades
 
 Mapa de Mesas com 20 mesas e 3 status visuais:
 
