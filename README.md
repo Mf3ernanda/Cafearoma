@@ -1,4 +1,7 @@
-☕ Café Aroma — Sistema de Gestão de Mesas
+# ☕ Café Aroma 
+
+— Sistema de Gestão de Mesas
+
 Sistema de PDV (Ponto de Venda) para gerenciamento de mesas de cafeteria, desenvolvido com HTML, CSS e JavaScript puro — sem frameworks ou dependências externas.
 
 📸 Preview
