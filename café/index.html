@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Café Aroma – Sistema de Mesas</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5efe6;
+    --cream: #fdf8f2;
+    --brown-dark: #3b2212;
+    --brown-mid: #6b3f1f;
+    --brown-light: #c49a6c;
+    --brown-pale: #e8d5bc;
+    --accent: #8b4513;
+    --occupied: #3b2212;
+    --free: #c8b89a;
+    --selected-ring: #6b3f1f;
+    --text-main: #2c1a0e;
+    --text-muted: #7a5c3c;
+    --border: #d9c4a8;
+    --shadow: 0 4px 24px rgba(59,34,18,0.10);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP NAV ── */
+  .topnav {
+    background: var(--brown-dark);
+    color: #f5dfc0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+    padding: 9px 0;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .topnav span { cursor: pointer; opacity: .7; transition: opacity .2s; }
+  .topnav span:hover { opacity: 1; }
+  .topnav span.active { opacity: 1; border-bottom: 2px solid var(--brown-light); padding-bottom: 2px; }
+
+  /* ── MAIN LAYOUT ── */
+  .app {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ── */
+  .left-panel {
+    background: var(--cream);
+    border-right: 1.5px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 18px 16px 10px;
+    gap: 14px;
+  }
+
+  .filters {
+    display: flex;
+    gap: 8px;
+  }
+  .filters select {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12.5px;
+    color: var(--text-main);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b3f1f' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    cursor: pointer;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--brown-mid);
+    text-align: center;
+    letter-spacing: .5px;
+  }
+
+  /* ── TABLE GRID ── */
+  .table-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    flex: 1;
+    align-content: start;
+  }
+
+  .table-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: transform .15s;
+  }
+  .table-item:hover { transform: scale(1.07); }
+  .table-item.selected .table-icon { outline: 3px solid var(--selected-ring); }
+
+  .table-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 10px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 700;
+    transition: background .2s;
+  }
+
+  .table-icon.free    { background: var(--free); color: #fff; }
+  .table-icon.busy    { background: var(--occupied); color: #f5dfc0; }
+  .table-icon.partial { background: var(--brown-light); color: #fff; }
+
+  /* chair decorations via pseudo */
+  .table-icon::before,
+  .table-icon::after {
+    content: '';
+    position: absolute;
+    border-radius: 4px;
+    background: inherit;
+    filter: brightness(.85);
+  }
+  /* top/bottom chairs */
+  .table-icon::before { width: 14px; height: 7px; top: -7px; left: 50%; transform: translateX(-50%); }
+  .table-icon::after  { width: 14px; height: 7px; bottom: -7px; left: 50%; transform: translateX(-50%); }
+
+  .table-num {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  /* ── STATUS BAR BOTTOM LEFT ── */
+  .status-bar {
+    display: flex;
+    gap: 0;
+    border-top: 1.5px solid var(--border);
+    padding-top: 10px;
+    margin-top: 4px;
+  }
+  .status-btn {
+    flex: 1;
+    padding: 8px 4px;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background .2s, color .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+  }
+  .status-btn:hover { background: var(--brown-pale); color: var(--brown-mid); }
+  .status-btn.active { background: var(--brown-dark); color: #f5dfc0; }
+  .status-btn svg { flex-shrink: 0; }
+
+  /* ── RIGHT PANEL ── */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 20px 24px 12px;
+    gap: 16px;
+    background: var(--bg);
+  }
+
+  /* ── HEADER CARD ── */
+  .header-card {
+    background: var(--cream);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px 20px;
+    align-items: start;
+    box-shadow: var(--shadow);
+  }
+
+  .attendant-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .attendant-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    background: var(--brown-pale);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 16px; font-weight: 700;
+    color: var(--brown-mid);
+    border: 2px solid var(--brown-light);
+  }
+  .attendant-label {
+    font-size: 10px; color: var(--text-muted); font-weight: 500;
+  }
+  .attendant-name { font-size: 12px; font-weight: 600; color: var(--brown-mid); }
+
+  .brand-logo {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: var(--brown-mid);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .brand-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 700;
+    color: var(--brown-dark);
+    line-height: 1;
+  }
+  .brand-sub { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+
+  .meta-row {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  .meta-field { display: flex; flex-direction: column; gap: 3px; }
+  .meta-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .8px; font-weight: 600; }
+  .meta-value {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    min-width: 48px;
+    text-align: center;
+  }
+  .meta-field.wide .meta-value { min-width: 180px; text-align: left; }
+
+  /* ── OBSERVATION ── */
+  .obs-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+  .obs-row input {
+    border: none; outline: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text-main);
+    flex: 1;
+    background: transparent;
+  }
+  .obs-icon { color: var(--brown-light); font-size: 16px; }
+
+  /* ── ORDER PANEL ── */
+  .order-card {
+    background: var(--cream);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .order-header {
+    background: var(--brown-dark);
+    color: #f5dfc0;
+    padding: 10px 20px;
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: .5px;
+  }
+
+  .order-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 0;
+  }
+
+  .order-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 20px;
+    border-bottom: 1px solid var(--brown-pale);
+    transition: background .15s;
+    cursor: default;
+  }
+  .order-row:hover { background: #f9f1e8; }
+  .order-row:last-child { border-bottom: none; }
+
+  .order-qty {
+    background: var(--brown-pale);
+    color: var(--brown-mid);
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    padding: 3px 0;
+  }
+  .order-name { font-size: 13.5px; font-weight: 500; }
+  .order-price { font-size: 13.5px; font-weight: 600; color: var(--brown-mid); white-space: nowrap; }
+
+  /* ── TOTALS ── */
+  .totals {
+    padding: 12px 20px;
+    border-top: 1.5px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .total-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); }
+  .total-row.grand { font-size: 16px; font-weight: 700; color: var(--brown-dark); margin-top: 4px; }
+
+  /* ── BOTTOM ACTION BAR ── */
+  .action-bar {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    padding-top: 4px;
+  }
+  .action-btn {
+    padding: 12px 8px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .18s;
+  }
+  .action-btn.secondary {
+    background: var(--brown-pale);
+    color: var(--brown-mid);
+  }
+  .action-btn.secondary:hover { background: var(--brown-light); color: white; }
+  .action-btn.primary {
+    background: var(--brown-dark);
+    color: #f5dfc0;
+  }
+  .action-btn.primary:hover { background: var(--brown-mid); }
+  .action-btn.highlight {
+    background: var(--accent);
+    color: white;
+  }
+  .action-btn.highlight:hover { filter: brightness(1.1); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(30,14,5,.45);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--cream);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    min-width: 320px;
+    box-shadow: 0 20px 60px rgba(30,14,5,.3);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .modal h2 { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--brown-dark); }
+  .modal p { font-size: 14px; color: var(--text-muted); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+  .modal-actions button { padding: 9px 20px; border-radius: 8px; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .btn-cancel { background: var(--brown-pale); color: var(--brown-mid); }
+  .btn-confirm { background: var(--brown-dark); color: #f5dfc0; }
+
+  /* scrollbar */
+  .order-list::-webkit-scrollbar { width: 5px; }
+  .order-list::-webkit-scrollbar-track { background: transparent; }
+  .order-list::-webkit-scrollbar-thumb { background: var(--brown-pale); border-radius: 4px; }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--brown-dark);
+    color: #f5dfc0;
+    padding: 11px 24px;
+    border-radius: 40px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all .35s cubic-bezier(.34,1.56,.64,1);
+    pointer-events: none;
+    z-index: 200;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav">
+  <span class="active">Mesas</span>
+  <span>Nav Menu</span>
+  <span>Suporte</span>
+</nav>
+
+<!-- MAIN -->
+<main class="app">
+
+  <!-- LEFT: TABLE MAP -->
+  <aside class="left-panel">
+    <div class="filters">
+      <select id="filterMesas">
+        <option>Todas as mesas</option>
+        <option>Ocupadas</option>
+        <option>Livres</option>
+      </select>
+      <select id="filterAtendente">
+        <option>Todos os Atendentes</option>
+        <option>Ana P.</option>
+        <option>Carlos M.</option>
+      </select>
+    </div>
+
+    <div class="section-title">Mapa de Mesas</div>
+
+    <div class="table-grid" id="tableGrid"></div>
+
+    <div class="status-bar">
+      <button class="status-btn" onclick="showToast('Consumo')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Consumo
+      </button>
+      <button class="status-btn" onclick="showToast('Ociosa')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+        Ociosa
+      </button>
+      <button class="status-btn active" id="btnConta" onclick="showToast('Conta gerada!')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Conta
+      </button>
+      <button class="status-btn" onclick="showToast('Info')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- RIGHT: ORDER DETAIL -->
+  <section class="right-panel">
+
+    <!-- Header -->
+    <div class="header-card">
+      <!-- Attendant -->
+      <div class="attendant-block" style="grid-row:1/3">
+        <div class="attendant-avatar" id="avatarText">A</div>
+        <div class="attendant-label">Atendente</div>
+        <div class="attendant-name" id="attendantName">Ana P.</div>
+      </div>
+
+      <!-- Brand -->
+      <div class="brand-logo">
+        <div class="logo-icon">☕</div>
+        <div>
+          <div class="brand-name">Café Aroma</div>
+          <div class="brand-sub">Sistema de Gestão de Mesas</div>
+        </div>
+      </div>
+
+      <!-- Meta -->
+      <div class="meta-row">
+        <div class="meta-field">
+          <div class="meta-label">Mesa</div>
+          <div class="meta-value" id="metaMesa">07</div>
+        </div>
+        <div class="meta-field">
+          <div class="meta-label">Pessoas</div>
+          <div class="meta-value" id="metaPessoas">2</div>
+        </div>
+        <div class="meta-field wide">
+          <div class="meta-label">Cliente</div>
+          <div class="meta-value" id="metaCliente">Clara Reis</div>
+        </div>
+      </div>
+
+      <!-- Observation -->
+      <div class="obs-row" style="grid-column:2; grid-row:3; margin-top:0;">
+        <span class="obs-icon">📝</span>
+        <input type="text" id="obsInput" placeholder="Observação do pedido..." value="Latte de aveia sem açúcar, Cappuccino extra quente"/>
+      </div>
+    </div>
+
+    <!-- Order list -->
+    <div class="order-card">
+      <div class="order-header">Lista de Pedidos</div>
+      <div class="order-list" id="orderList"></div>
+      <div class="totals">
+        <div class="total-row"><span>Subtotal</span><span id="subtotal">R$ 18,00</span></div>
+        <div class="total-row grand"><span>Total</span><span id="total">R$ 18,00</span></div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="action-bar">
+      <button class="action-btn secondary" onclick="showToast('Mesas juntadas!')">Juntar</button>
+      <button class="action-btn secondary" onclick="showToast('Mapa de venda aberto')">Mapa de Venda</button>
+      <button class="action-btn highlight" onclick="openProductsModal()">Produtos</button>
+      <button class="action-btn secondary" onclick="showToast('Teclado numérico')">Teclado</button>
+      <button class="action-btn primary" onclick="openFuncoesModal()">Funções</button>
+    </div>
+
+  </section>
+</main>
+
+<!-- MODAL: Funções -->
+<div class="modal-overlay" id="funcoesModal">
+  <div class="modal">
+    <h2>Funções</h2>
+    <p>Selecione uma ação para a mesa <strong id="modalMesa">07</strong>:</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <button class="action-btn secondary" onclick="closeModal('funcoesModal');showToast('Pedido cancelado')">Cancelar Pedido</button>
+      <button class="action-btn secondary" onclick="closeModal('funcoesModal');showToast('Mesa transferida')">Transferir Mesa</button>
+      <button class="action-btn secondary" onclick="closeModal('funcoesModal');showToast('Desconto aplicado')">Desconto</button>
+      <button class="action-btn primary" onclick="closeModal('funcoesModal');showToast('Conta fechada! ✓')">Fechar Conta</button>
+    </div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('funcoesModal')">Fechar</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Produtos -->
+<div class="modal-overlay" id="productsModal">
+  <div class="modal" style="min-width:380px">
+    <h2>Adicionar Produto</h2>
+    <div id="productsList" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;"></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal('productsModal')">Fechar</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  /* ─── DATA ─── */
+  const tables = [
+    { num:1,  status:'free',    attendant:'Carlos M.', client:'',          persons:0, orders:[] },
+    { num:2,  status:'free',    attendant:'Carlos M.', client:'',          persons:0, orders:[] },
+    { num:3,  status:'free',    attendant:'Ana P.',    client:'',          persons:0, orders:[] },
+    { num:4,  status:'busy',    attendant:'Ana P.',    client:'João Silva', persons:3, orders:[
+        {qty:1, name:'Espresso Duplo G',   price:12},
+        {qty:2, name:'Pão de Queijo',      price:8},
+        {qty:1, name:'Suco de Laranja',    price:9},
+    ]},
+    { num:5,  status:'busy',    attendant:'Ana P.',    client:'Maria Lopes',persons:4, orders:[
+        {qty:2, name:'Cappuccino G',       price:14},
+        {qty:3, name:'Croissant Presunto', price:11},
+    ]},
+    { num:6,  status:'free',    attendant:'Carlos M.', client:'',          persons:0, orders:[] },
+    { num:7,  status:'free',    attendant:'Ana P.',    client:'',          persons:0, orders:[] },
+    { num:8,  status:'busy',    attendant:'Ana P.',    client:'Clara Reis', persons:2, orders:[
+        {qty:1, name:'Latte Aveia G',      price:15},
+        {qty:1, name:'Cappuccino G',       price:14},
+        {qty:1, name:'Croissant Chocolate',price:11},
+        {qty:2, name:'Muffins de Mirtilo', price:9},
+    ]},
+    { num:9,  status:'free',    attendant:'Carlos M.', client:'',          persons:0, orders:[] },
+    { num:10, status:'partial', attendant:'Carlos M.', client:'Pedro Boa',  persons:2, orders:[
+        {qty:1, name:'Café Preto',         price:7},
+        {qty:1, name:'Torrada Amanteigada',price:6},
+    ]},
+    { num:11, status:'free',    attendant:'Ana P.',    client:'',          persons:0, orders:[] },
+    { num:12, status:'free',    attendant:'Carlos M.', client:'',          persons:0, orders:[] },
+    { num:13, status:'free',    attendant:'Ana P.',    client:'',          persons:0, orders:[] },
+    { num:14, status:'free',    attendant:'Carlos M.', client:'',          persons:0, orders:[] },
+    { num:15, status:'free',    attendant:'Ana P.',    client:'',          persons:0, orders:[] },
+    { num:16, status:'busy',    attendant:'Carlos M.', client:'Fernanda S.',persons:5, orders:[
+        {qty:3, name:'Frappuccino Caramelo',price:16},
+        {qty:5, name:'Brownie Avelã',       price:10},
+        {qty:2, name:'Suco de Maçã',        price:8},
+    ]},
+    { num:17, status:'free',    attendant:'Ana P.',    client:'',          persons:0, orders:[] },
+    { num:18, status:'partial', attendant:'Carlos M.', client:'Rafael M.',  persons:1, orders:[
+        {qty:1, name:'Mocha G',            price:14},
+    ]},
+    { num:19, status:'busy',    attendant:'Ana P.',    client:'Lívia Costa',persons:3, orders:[
+        {qty:3, name:'Latte G',            price:13},
+        {qty:3, name:'Sanduíche Natural',  price:14},
+    ]},
+    { num:20, status:'free',    attendant:'Carlos M.', client:'',          persons:0, orders:[] },
+  ];
+
+  const catalog = [
+    {name:'Espresso G',          price:10},
+    {name:'Cappuccino G',        price:14},
+    {name:'Latte Aveia G',       price:15},
+    {name:'Mocha G',             price:14},
+    {name:'Frappuccino Caramelo',price:16},
+    {name:'Croissant Chocolate', price:11},
+    {name:'Muffin Mirtilo',      price:9},
+    {name:'Pão de Queijo (2un)', price:8},
+    {name:'Brownie Avelã',       price:10},
+    {name:'Torrada Amanteigada', price:6},
+  ];
+
+  let selectedTable = tables.find(t => t.num === 8); // default: table 8
+
+  /* ─── RENDER TABLES ─── */
+  function renderTables() {
+    const grid = document.getElementById('tableGrid');
+    const fMesas = document.getElementById('filterMesas').value;
+    const fAtt   = document.getElementById('filterAtendente').value;
+    grid.innerHTML = '';
+
+    tables.forEach(t => {
+      if (fMesas === 'Ocupadas' && t.status === 'free') return;
+      if (fMesas === 'Livres'   && t.status !== 'free') return;
+      if (fAtt !== 'Todos os Atendentes' && t.attendant !== fAtt) return;
+
+      const el = document.createElement('div');
+      el.className = 'table-item' + (selectedTable?.num === t.num ? ' selected' : '');
+      el.innerHTML = `
+        <div class="table-icon ${t.status}">${t.num}</div>
+        <div class="table-num">Mesa ${t.num}</div>
+      `;
+      el.onclick = () => selectTable(t);
+      grid.appendChild(el);
+    });
+  }
+
+  /* ─── SELECT TABLE ─── */
+  function selectTable(t) {
+    selectedTable = t;
+    renderTables();
+    renderOrder();
+    updateHeader();
+  }
+
+  /* ─── UPDATE HEADER ─── */
+  function updateHeader() {
+    if (!selectedTable) return;
+    const t = selectedTable;
+    document.getElementById('metaMesa').textContent = String(t.num).padStart(2,'0');
+    document.getElementById('metaPessoas').textContent = t.persons || '—';
+    document.getElementById('metaCliente').textContent = t.client || '—';
+    document.getElementById('attendantName').textContent = t.attendant;
+    document.getElementById('avatarText').textContent = t.attendant.charAt(0);
+    document.getElementById('modalMesa').textContent = String(t.num).padStart(2,'0');
+    document.getElementById('obsInput').value = t.persons === 0 ? '' : document.getElementById('obsInput').value;
+  }
+
+  /* ─── RENDER ORDER ─── */
+  function renderOrder() {
+    const list = document.getElementById('orderList');
+    list.innerHTML = '';
+    const orders = selectedTable?.orders || [];
+    let sub = 0;
+    orders.forEach(o => {
+      sub += o.qty * o.price;
+      const row = document.createElement('div');
+      row.className = 'order-row';
+      row.innerHTML = `
+        <div class="order-qty">${o.qty}</div>
+        <div class="order-name">${o.name}</div>
+        <div class="order-price">${fmt(o.qty * o.price)}</div>
+      `;
+      list.appendChild(row);
+    });
+    if (orders.length === 0) {
+      list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">Nenhum item adicionado.</div>';
+    }
+    document.getElementById('subtotal').textContent = fmt(sub);
+    document.getElementById('total').textContent    = fmt(sub);
+  }
+
+  function fmt(n) {
+    return 'R$ ' + n.toFixed(2).replace('.',',');
+  }
+
+  /* ─── PRODUCTS MODAL ─── */
+  function openProductsModal() {
+    const list = document.getElementById('productsList');
+    list.innerHTML = '';
+    catalog.forEach(p => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:white;border-radius:8px;border:1.5px solid var(--border);';
+      row.innerHTML = `
+        <span style="font-size:13.5px;font-weight:500">${p.name}</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:13px;color:var(--text-muted)">${fmt(p.price)}</span>
+          <button onclick="addItem('${p.name}',${p.price})" style="background:var(--brown-dark);color:#f5dfc0;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer">+ Add</button>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+    document.getElementById('productsModal').classList.add('open');
+  }
+
+  function addItem(name, price) {
+    if (!selectedTable) return;
+    const existing = selectedTable.orders.find(o => o.name === name);
+    if (existing) { existing.qty++; }
+    else { selectedTable.orders.push({qty:1, name, price}); }
+    if (selectedTable.status === 'free') {
+      selectedTable.status = 'partial';
+      selectedTable.persons = 1;
+    }
+    renderOrder();
+    renderTables();
+    showToast(`${name} adicionado ✓`);
+  }
+
+  function openFuncoesModal() {
+    document.getElementById('funcoesModal').classList.add('open');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  // close modals on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  /* ─── TOAST ─── */
+  let toastTimer;
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  /* ─── FILTERS ─── */
+  document.getElementById('filterMesas').addEventListener('change', renderTables);
+  document.getElementById('filterAtendente').addEventListener('change', renderTables);
+
+  /* ─── INIT ─── */
+  renderTables();
+  renderOrder();
+  updateHeader();
+</script>
+</body>
+</html>
